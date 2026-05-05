@@ -76,47 +76,6 @@ frontend/
 └── ...               # 构建配置文件
 ```
 
-## 派聪明的成绩
-
-派聪明是 9 月份上线的，截止到目前，已经取得了非常瞩目的成绩，我这里晒一下哈。
-
-
-![面渣逆袭+派聪明 拿下招银网络+科大讯飞](https://cdn.tobebetterjavaer.com/paicoding/fb5db62ab92092e2d74a4916b6a45710.png)
-
-
-![派聪明拿到的日常实习](https://cdn.tobebetterjavaer.com/paicoding/da01a535b091c5ebeed70bf9a08a90c6.png)
-
-
-![派聪明拿下合合信息](https://cdn.tobebetterjavaer.com/paicoding/3518a76f439c325de8df763482cbebc4.png)
-
-
-![派聪明拿下小红书](https://cdn.tobebetterjavaer.com/paicoding/7bed4d34460749d68db9c0fcbc4621a8.png)
-
-
-![派聪明拿下网易](https://cdn.tobebetterjavaer.com/paicoding/5f227edcb38ffe41aea8fc0880f64cad.png)
-
-说句真心话，看到这，就可以无脑冲这个项目了，因为这些，还只是冰山一角。扫下面的优惠券（或者长按自动识别）解锁派聪明源码和教程吧，[星球](https://javabetter.cn/zhishixingqiu/)目前定价 159 元/年，优惠完只需要 129 元，每天不到 0.35 元，绝对的超值。
-
-![派聪明优惠券](https://cdn.tobebetterjavaer.com/paicoding/97601d7a337d7d944b02bb4a79cd6430.png)
-
->派聪明如何写到简历上：[https://paicoding.com/column/10/2](https://paicoding.com/column/10/2)
-
-
-
-## 核心功能
-
-这里我先带大家了解一下什么是派聪明，我为什么要做派聪明这个企业级的 RAG 知识库？派聪明这个 AI 项目能让大家学到什么？以及如何解锁派聪明的源码仓库和教程？
-
-![派聪明的聊天助手：会依据知识库进行问答](https://cdn.tobebetterjavaer.com/paicoding/2550c873a349d8bee29d46400f12ce76.png)
-
-![派聪明的架构概览](https://cdn.tobebetterjavaer.com/stutymore/README-20250730101618.png)
-
-### 知识库管理
-
-派聪明提供了完整的文档上传与解析功能，支持文件分片上传和断点续传，并支持标签进行组织管理。文档可以是公开的，也可以是私有的，并且可以与特定的组织标签关联，以便更好地进行权限分类。
-
-![派聪明文档处理](https://cdn.tobebetterjavaer.com/stutymore/README-20250730102808.png)
-
 ### AI驱动的RAG实现
 
 派聪明的核心是 RAG 实现：
