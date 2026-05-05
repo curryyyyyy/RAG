@@ -58,12 +58,12 @@ spring:
     max-in-memory-size: 16MB
 
 minio:
-  # 本地 MinIO 默认端口 9000
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  # 本地 MinIO 默认端口 19000
+  endpoint: ${MINIO_ENDPOINT:http://localhost:19000}
   accessKey: ${MINIO_ACCESS_KEY:}
   secretKey: ${MINIO_SECRET_KEY:}
   bucketName: ${MINIO_BUCKET_NAME:uploads}
-  publicUrl: ${MINIO_PUBLIC_URL:http://localhost:9000}
+  publicUrl: ${MINIO_PUBLIC_URL:http://localhost:19000}
 
 jwt:
   secret-key: ${JWT_SECRET_KEY:}

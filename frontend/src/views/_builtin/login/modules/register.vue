@@ -113,58 +113,6 @@ watch(
 
 <template>
   <div class="register-layout">
-    <aside class="invite-side-panel">
-      <div class="invite-side-header">
-        <div class="invite-side-kicker">邀请码获取</div>
-        <div class="invite-side-title">派聪明RAG实战项目，祝你求职无敌。</div>
-        <div class="invite-side-desc">
-          微信搜索
-          <span class="invite-emphasis">{{ inviteChannelConfig.officialAccountName }}</span>
-          或者扫下面的二维码，后台回复关键字
-          <span class="invite-keyword-mark">{{ inviteChannelKeywords.join(' / ') }}</span>
-          拿内测邀请码。
-        </div>
-      </div>
-
-      <div class="invite-side-bottom">
-        <div class="invite-qr-shell">
-          <img
-            v-if="inviteChannelConfig.qrCodeImageUrl"
-            :src="inviteChannelConfig.qrCodeImageUrl"
-            alt="公众号二维码"
-            class="invite-qr-image"
-          />
-          <div v-else class="invite-qr-placeholder">
-            <icon-ant-design:wechat-outlined class="invite-qr-icon" />
-            <div class="invite-qr-title">公众号二维码位</div>
-            <div class="invite-qr-desc">后续把二维码地址填到 `qrCodeImageUrl`，这里会直接展示扫码入口。</div>
-          </div>
-        </div>
-
-        <div class="invite-side-steps">
-          <div class="invite-step-row">
-            <span class="invite-channel-step">1</span>
-            <span>
-              微信搜索并关注公众号
-              <span class="invite-emphasis">{{ inviteChannelConfig.officialAccountName }}</span>
-            </span>
-          </div>
-          <div class="invite-step-row">
-            <span class="invite-channel-step">2</span>
-            <span class="invite-step-copy">
-              后台回复关键字
-              <span class="invite-keyword-mark">{{ inviteChannelKeywords.join(' / ') }}</span>
-              <NButton text type="primary" class="invite-inline-copy" @click="copyInviteKeywords">复制</NButton>
-            </span>
-          </div>
-          <div class="invite-step-row">
-            <span class="invite-channel-step">3</span>
-            <span>拿到邀请码后，在右侧完成注册</span>
-          </div>
-        </div>
-      </div>
-    </aside>
-
     <NForm
       ref="formRef"
       :model="model"
@@ -216,9 +164,7 @@ watch(
           </template>
         </NInput>
       </NFormItem>
-      <div class="register-form-tip mb-4">
-        {{ $t('page.login.register.inviteCodeTip') }}
-      </div>
+      
       <NSpace vertical :size="18" class="w-full">
         <NButton type="primary" size="large" round block :loading="loading" @click="handleSubmit">
           {{ $t('page.login.common.register') }}
@@ -240,14 +186,15 @@ watch(
 
 <style scoped>
 .register-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
-  gap: 20px;
-  align-items: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
 }
 
 .register-form-panel {
-  min-width: 0;
+  width: 100%;
+  max-width: 400px;
 }
 
 .register-form-tip {
