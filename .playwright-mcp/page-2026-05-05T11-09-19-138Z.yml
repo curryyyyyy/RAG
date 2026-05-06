@@ -1,0 +1,45 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - banner [ref=e7]:
+      - img [ref=e8]
+      - heading "RAG知识检索" [level=3] [ref=e10]:
+        - generic [ref=e11]: RAG知识检索
+      - button [ref=e13] [cursor=pointer]:
+        - img [ref=e16]
+    - main [ref=e17]:
+      - heading "密码登录" [level=3] [ref=e18]
+      - generic [ref=e20]:
+        - generic [ref=e24]:
+          - img [ref=e26]
+          - generic [ref=e28]:
+            - textbox "请输入用户名" [ref=e29]
+            - generic:
+              - generic: 请输入用户名
+        - generic [ref=e34]:
+          - img [ref=e36]
+          - generic [ref=e38]:
+            - textbox "请输入密码" [ref=e39]
+            - generic:
+              - generic: 请输入密码
+          - img [ref=e43] [cursor=pointer]
+        - checkbox "记住用户名和密码" [ref=e51] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e58]: 记住用户名和密码
+        - generic [ref=e59]:
+          - button "登录账号" [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]: 登录账号
+          - button "注册账号" [ref=e62] [cursor=pointer]:
+            - generic [ref=e63]: 注册账号
+          - generic [ref=e64]:
+            - text: 登录即代表已阅读并同意我们的
+            - button "用户协议" [ref=e65] [cursor=pointer]:
+              - generic [ref=e66]: 用户协议
+            - text: 和
+            - button "隐私政策" [ref=e67] [cursor=pointer]:
+              - generic [ref=e68]: 隐私政策
+  - img
+  - generic [ref=e69]:
+    - generic "Toggle devtools panel" [ref=e70] [cursor=pointer]:
+      - img [ref=e71]
+    - generic "Toggle Component Inspector" [ref=e76] [cursor=pointer]:
+      - img [ref=e77]

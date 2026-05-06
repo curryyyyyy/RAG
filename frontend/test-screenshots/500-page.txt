@@ -1,2 +1,0 @@
-uid=5_0 RootWebArea "服务器错误" url="http://localhost:9527/#/500"
-  uid=5_1 button "返回首页"
