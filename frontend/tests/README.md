@@ -30,8 +30,10 @@ frontend/
 │   │   │   └── knowledge-base.spec.ts     # 知识库模块 12 条
 │   │   ├── chat/
 │   │   │   └── chat.spec.ts               # 聊天助手模块 9 条
-│   │   ├── user/                          # 用户管理（待编写）
-│   │   └── org-tag/                       # 组织标签（待编写）
+│   │   ├── user/
+│   │   │   └── user-management.spec.ts    # 用户管理 9 条
+│   │   └── org-tag/
+│   │       └── org-tag.spec.ts            # 组织标签 9 条
 │   └── unit/                              # 单元测试（待编写）
 ├── .github/workflows/
 │   └── test.yml                           # CI 自动化测试流水线
@@ -120,7 +122,35 @@ pnpm test:all
 | TC-CHAT-08 | 日期筛选控件存在 | Render |
 | TC-CHAT-09 | 从其他页面切换回聊天助手 | Navigation |
 
-**合计 30 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network 等维度。
+### 用户管理模块 (`e2e/user/user-management.spec.ts`)
+
+| 编号 | 用例 | 类型 |
+|------|------|------|
+| TC-USER-01 | 用户列表正确加载 | Render |
+| TC-USER-02 | 用户列表包含数据行 | Data |
+| TC-USER-03 | 关键词搜索功能 | Search |
+| TC-USER-04 | 组织标签筛选控件存在 | Render |
+| TC-USER-05 | 启用状态筛选控件存在 | Render |
+| TC-USER-06 | LLM 和 Embedding 额度展示 | Data |
+| TC-USER-07 | 分配组织标签按钮存在 | Feature |
+| TC-USER-08 | 刷新按钮功能 | Feature |
+| TC-USER-09 | 分页控件存在 | Render |
+
+### 组织标签模块 (`e2e/org-tag/org-tag.spec.ts`)
+
+| 编号 | 用例 | 类型 |
+|------|------|------|
+| TC-ORG-01 | 标签列表正确加载 | Render |
+| TC-ORG-02 | 标签列表包含数据 | Data |
+| TC-ORG-03 | 新增标签 — 弹窗打开 | Dialog |
+| TC-ORG-04 | 编辑标签 — 弹窗打开 | Dialog |
+| TC-ORG-05 | 新增下级标签 — 弹窗打开 | Dialog |
+| TC-ORG-06 | 删除标签 — 确认弹窗 | Dialog |
+| TC-ORG-07 | 刷新按钮功能 | Feature |
+| TC-ORG-08 | 列设置按钮存在 | Render |
+| TC-ORG-09 | 分页控件存在 | Render |
+
+**合计 48 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network、Dialog 等维度。
 
 ## 添加新用例
 
