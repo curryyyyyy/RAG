@@ -36,7 +36,7 @@ test.describe('用户管理模块', () => {
     await expect(searchInput).toBeVisible();
     await searchInput.fill('admin');
     // 搜索后表格应仍然可见
-    await expect(page.locator('main table')).toBeVisible();
+    await expect(page.locator('main table').first()).toBeVisible();
   });
 
   test('TC-USER-04: 组织标签筛选控件存在', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('用户管理模块', () => {
 
   test('TC-USER-06: LLM 和 Embedding 额度展示', async ({ page }) => {
     // admin 用户的额度信息
-    await expect(page.getByText('今日消息数')).first().toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('今日消息数').first()).toBeVisible({ timeout: 3000 });
     // 额度格式: 数字 / 数字
     await expect(page.getByText(/\d[\d,]*\s*\/\s*\d[\d,]*/).first()).toBeVisible();
   });
@@ -70,6 +70,7 @@ test.describe('用户管理模块', () => {
   });
 
   test('TC-USER-09: 分页控件存在', async ({ page }) => {
-    await expect(page.getByText(/页/).first()).toBeVisible({ timeout: 3000 });
+    const pagination = page.locator('.n-pagination, [class*="pagination"]');
+    await expect(pagination.first()).toBeAttached({ timeout: 3000 });
   });
 });

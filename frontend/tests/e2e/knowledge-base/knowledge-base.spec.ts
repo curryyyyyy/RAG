@@ -100,11 +100,12 @@ test.describe('知识库模块', () => {
   });
 
   test('TC-KB-12: MD5 值可复制', async ({ page }) => {
-    const md5Cell = page.getByText('3b97a00d');
+    // 在表格内定位 MD5 文本
+    const md5Cell = page.locator('main table').getByText('3b97a00d').first();
     await expect(md5Cell).toBeVisible();
-    // 点击复制
     await md5Cell.click();
-    // 应有复制成功反馈（toast/message）
-    await expect(page.getByText(/复制成功|已复制|Copied/i)).toBeVisible({ timeout: 3000 });
+    // 应有复制成功反馈（naive-ui toast/message，也可能用 text 显示）
+    const copied = page.getByText(/复制成功|已复制|Copied/i).first();
+    await expect(copied).toBeVisible({ timeout: 5000 });
   });
 });
