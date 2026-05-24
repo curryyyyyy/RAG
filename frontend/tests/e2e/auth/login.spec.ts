@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI } from '../fixtures/test-helpers';
+import { loginViaUI } from '../../fixtures/test-helpers';
 
 test.describe('登录模块', () => {
   test.beforeEach(async ({ page }) => {

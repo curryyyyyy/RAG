@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo, closeDialog, waitForStable } from '../fixtures/test-helpers';
+import { loginViaUI, navigateTo, closeDialog, waitForStable } from '../../fixtures/test-helpers';
 
 test.describe('知识库模块', () => {
   test.beforeEach(async ({ page }) => {

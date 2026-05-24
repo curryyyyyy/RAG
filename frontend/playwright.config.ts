@@ -1,13 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: '.',
+  testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
-    ['html', { outputFolder: '../playwright-report' }],
+    ['html', { outputFolder: 'playwright-report' }],
     ['list'],
   ],
   timeout: 30000,
@@ -18,7 +18,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  outputDir: '../test-results',
+  outputDir: 'test-results',
   projects: [
     {
       name: 'chromium',
@@ -27,7 +27,6 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    cwd: '..',
     url: 'http://localhost:9527',
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
