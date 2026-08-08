@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo, waitForStable, closeDialog } from '../../fixtures/test-helpers';
+import { navigateTo, waitForStable, closeDialog } from '../../fixtures/test-helpers';
 
 test.describe('组织标签模块', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaUI(page);
+    // storageState 已登录
+    await page.goto('/');
+    await waitForStable(page);
     await navigateTo(page, '组织标签');
     await expect(page).toHaveURL(/\/org-tag/);
     await waitForStable(page);

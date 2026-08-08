@@ -1,53 +1,46 @@
-# PaiSmart 自动化测试
+# PaiSmart E2E 自动化测试
 
-基于 Playwright + Vitest 的前端自动化测试体系，覆盖 E2E 全流程和单元测试。
+基于 Playwright 的端到端浏览器自动化测试，独立于 `frontend` 应用目录存放，覆盖登录、知识库、聊天助手、用户管理、组织标签等核心流程。
 
 ## 技术栈
 
 | 组件 | 版本 | 用途 |
 |------|------|------|
 | @playwright/test | ^1.59 | E2E 浏览器自动化 |
-| vitest | ^4.1 | 单元测试 / 组件测试 |
-| @vitest/coverage-v8 | ^4.1 | 代码覆盖率 |
-| jsdom | ^29.1 | 单元测试 DOM 环境 |
 | Chromium | - | E2E 浏览器引擎 |
 | pnpm | >=8.7 | 包管理 |
 
 ## 目录结构
 
 ```
-frontend/
-├── playwright.config.ts                   # Playwright E2E 配置
-├── vitest.config.ts                       # Vitest 单元测试配置
-├── tests/
-│   ├── README.md                          # 本文件
-│   ├── fixtures/
-│   │   └── test-helpers.ts                # E2E 公共辅助函数
-│   ├── e2e/                               # E2E 测试（覆盖全部流程）
-│   │   ├── auth/
-│   │   │   └── login.spec.ts              # 登录模块 9 条
-│   │   ├── knowledge-base/
-│   │   │   └── knowledge-base.spec.ts     # 知识库模块 12 条
-│   │   ├── chat/
-│   │   │   └── chat.spec.ts               # 聊天助手模块 9 条
-│   │   ├── user/
-│   │   │   └── user-management.spec.ts    # 用户管理 9 条
-│   │   └── org-tag/
-│   │       └── org-tag.spec.ts            # 组织标签 9 条
-│   └── unit/                              # 单元测试（待编写）
-├── .github/workflows/
-│   └── test.yml                           # CI 自动化测试流水线
-├── playwright-report/                     # E2E HTML 报告（生成）
-├── test-results/                          # E2E 测试产物（生成）
-└── coverage/                              # 覆盖率报告（生成）
+PaiSmart/
+├── frontend/                               # Vue 应用（含 Vitest 单元测试）
+└── e2e-tests/                              # 本目录 — Playwright E2E 测试
+    ├── package.json                        # 独立依赖与脚本
+    ├── playwright.config.ts                # Playwright E2E 配置
+    ├── tests/
+    │   ├── README.md                       # 本文件
+    │   ├── fixtures/
+    │   │   └── test-helpers.ts             # E2E 公共辅助函数
+    │   └── e2e/                            # E2E 测试（覆盖全部流程）
+    │       ├── auth/
+    │       │   └── login.spec.ts           # 登录模块 9 条
+    │       ├── knowledge-base/
+    │       │   └── knowledge-base.spec.ts  # 知识库模块 12 条
+    │       ├── chat/
+    │       │   └── chat.spec.ts            # 聊天助手模块 9 条
+    │       ├── user/
+    │       │   └── user-management.spec.ts # 用户管理 9 条
+    │       └── org-tag/
+    │           └── org-tag.spec.ts         # 组织标签 9 条
+    ├── playwright-report/                  # E2E HTML 报告（生成）
+    └── test-results/                       # E2E 测试产物（生成）
 ```
 
 ## 运行测试
 
 ```bash
-cd frontend
-
-# === E2E 测试 ===
+cd e2e-tests
 
 # 运行全部 E2E 用例 (headless)
 pnpm test
@@ -60,20 +53,20 @@ pnpm test:headed
 
 # 查看 HTML 报告
 pnpm test:report
-
-# === 单元测试 ===
-
-# 运行全部单元测试
-pnpm test:unit
-
-# 运行单元测试 + 覆盖率
-pnpm test:unit:coverage
-
-# === 全量测试 ===
-
-# E2E + 单元测试
-pnpm test:all
 ```
+
+在 `frontend` 目录下同样可以通过 `pnpm test` / `pnpm test:ui` / `pnpm test:headed` / `pnpm test:report` 委托运行上述命令。
+
+## 认证机制
+
+采用 Playwright `setup project + storageState` 方案，登录只发生一次：
+
+- **`tests/e2e/auth/auth.setup.ts`** — `setup` 项目，运行所有用例前通过 UI 登录一次，把登录态（localStorage token）保存到 `auth/user.json`
+- **`chromium` 项目** 默认加载 `auth/user.json`，其余模块用例直接以已登录状态启动，无需再走 UI 登录
+- **`login.spec.ts`** 通过 `test.use({ storageState: { cookies: [], origins: [] } })` 覆盖为空，保证登录/重定向用例从未登录状态开始
+- `auth/` 目录由运行时生成，已在 `.gitignore` 中忽略，不提交 token 到仓库
+
+> 认证凭据（`TEST_USER`/`TEST_PASS`）从环境变量读取，默认值仅用于本地开发，CI 通过 secrets 注入。
 
 ## E2E 用例覆盖
 
@@ -154,8 +147,6 @@ pnpm test:all
 
 ## 添加新用例
 
-### E2E 用例
-
 ```typescript
 import { test, expect } from '@playwright/test';
 import { loginViaUI, navigateTo } from '../../fixtures/test-helpers';
@@ -174,35 +165,14 @@ test.describe('新模块', () => {
 });
 ```
 
-### 单元测试
-
-```typescript
-import { describe, it, expect } from 'vitest';
-
-describe('功能模块', () => {
-  it('应返回正确结果', () => {
-    expect(1 + 1).toBe(2);
-  });
-});
-```
-
 ## Playwright 配置说明
 
 `playwright.config.ts` 关键配置：
 
 - **baseURL**: `http://localhost:9527`
-- **webServer**: 自动启动 `pnpm dev`，复用已运行的服务
-- **timeout**: 30s (单个用例)
+- **webServer**: 自动在 `../frontend` 目录启动 `pnpm dev`，复用已运行的服务
+- **timeout**: 45s (单个用例)
 - **expect timeout**: 10s (单个断言)
 - **screenshot**: 失败时自动截图
 - **video**: 失败时保留视频回放
 - **trace**: 首次重试时记录
-
-## Vitest 配置说明
-
-`vitest.config.ts` 关键配置：
-
-- **environment**: `jsdom` (模拟浏览器 DOM)
-- **include**: `tests/unit/**/*.test.ts`
-- **coverage**: v8 provider，输出 text + html
-- **alias**: `@` → `./src`

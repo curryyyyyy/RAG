@@ -20,13 +20,16 @@ export default defineConfig({
   },
   outputDir: 'test-results',
   projects: [
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: 'auth/user.json' },
+      dependencies: ['setup'],
     },
   ],
   webServer: {
     command: 'pnpm dev',
+    cwd: '../frontend',
     url: 'http://localhost:9527',
     reuseExistingServer: !process.env.CI,
     timeout: 60000,

@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo, closeDialog, waitForStable } from '../../fixtures/test-helpers';
+import { navigateTo, closeDialog, waitForStable } from '../../fixtures/test-helpers';
 
 test.describe('知识库模块', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaUI(page);
+    // storageState 已登录
+    await page.goto('/');
+    await waitForStable(page);
     await navigateTo(page, '知识库');
   });
 

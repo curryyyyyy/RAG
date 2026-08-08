@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo, waitForStable } from '../../fixtures/test-helpers';
+import { navigateTo, waitForStable } from '../../fixtures/test-helpers';
 
 test.describe('聊天助手模块', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaUI(page);
-    // 登录后默认在 /chat，确保处于聊天助手页面
+    // storageState 已登录，进入默认页 /chat
+    await page.goto('/');
     await waitForStable(page);
   });
 

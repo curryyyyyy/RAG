@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo, waitForStable } from '../../fixtures/test-helpers';
+import { navigateTo, waitForStable, TEST_USER } from '../../fixtures/test-helpers';
 
 test.describe('用户管理模块', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaUI(page);
+    // storageState 已登录
+    await page.goto('/');
+    await waitForStable(page);
     await navigateTo(page, '用户管理');
     await expect(page).toHaveURL(/\/user/);
     await waitForStable(page);
@@ -24,7 +26,7 @@ test.describe('用户管理模块', () => {
   });
 
   test('TC-USER-02: 用户列表包含数据行', async ({ page }) => {
-    await expect(page.getByText('admin').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(TEST_USER).first()).toBeVisible({ timeout: 5000 });
     // 表格中应该有多个用户
     const rows = page.locator('main table tbody tr');
     const count = await rows.count();
@@ -34,7 +36,7 @@ test.describe('用户管理模块', () => {
   test('TC-USER-03: 关键词搜索功能', async ({ page }) => {
     const searchInput = page.getByPlaceholder('请输入关键词');
     await expect(searchInput).toBeVisible();
-    await searchInput.fill('admin');
+    await searchInput.fill(TEST_USER);
     // 搜索后表格应仍然可见
     await expect(page.locator('main table').first()).toBeVisible();
   });

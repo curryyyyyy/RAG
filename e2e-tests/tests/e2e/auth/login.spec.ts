@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { loginViaUI } from '../../fixtures/test-helpers';
+import { loginViaUI, TEST_USER, TEST_PASS } from '../../fixtures/test-helpers';
+
+// 登录用例必须从未登录状态开始，覆盖默认的 storageState
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('登录模块', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,14 +11,14 @@ test.describe('登录模块', () => {
   });
 
   test('TC-LOGIN-01: 正常登录 — 成功跳转到聊天页面', async ({ page }) => {
-    await page.getByPlaceholder('请输入用户名').fill('admin');
-    await page.getByPlaceholder('请输入密码').fill('chengxi123456');
+    await page.getByPlaceholder('请输入用户名').fill(TEST_USER);
+    await page.getByPlaceholder('请输入密码').fill(TEST_PASS);
     await page.getByRole('button', { name: '登录账号' }).click();
 
     await page.waitForURL('**/chat', { timeout: 10000 });
     await expect(page.getByText('登录成功')).toBeVisible();
-    await expect(page.getByText(/欢迎回来.*admin/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'admin' })).toBeVisible();
+    await expect(page.getByText(new RegExp(`欢迎回来.*${TEST_USER}`))).toBeVisible();
+    await expect(page.getByRole('button', { name: TEST_USER })).toBeVisible();
   });
 
   test('TC-LOGIN-02: 密码错误 — 拒绝登录', async ({ page }) => {
@@ -25,7 +28,7 @@ test.describe('登录模块', () => {
       { timeout: 10000 },
     );
 
-    await page.getByPlaceholder('请输入用户名').fill('admin');
+    await page.getByPlaceholder('请输入用户名').fill(TEST_USER);
     await page.getByPlaceholder('请输入密码').fill('wrong_password_123');
     await page.getByRole('button', { name: '登录账号' }).click();
 
@@ -37,7 +40,7 @@ test.describe('登录模块', () => {
   });
 
   test('TC-LOGIN-03: 空用户名 — 前端校验', async ({ page }) => {
-    await page.getByPlaceholder('请输入密码').fill('chengxi123456');
+    await page.getByPlaceholder('请输入密码').fill(TEST_PASS);
     await page.getByRole('button', { name: '登录账号' }).click();
 
     // 输入框应有必填提示或按钮不响应
@@ -48,7 +51,7 @@ test.describe('登录模块', () => {
   });
 
   test('TC-LOGIN-04: 空密码 — 前端校验', async ({ page }) => {
-    await page.getByPlaceholder('请输入用户名').fill('admin');
+    await page.getByPlaceholder('请输入用户名').fill(TEST_USER);
     await page.getByRole('button', { name: '登录账号' }).click();
 
     await expect(page).not.toHaveURL(/\/chat/);
@@ -66,8 +69,8 @@ test.describe('登录模块', () => {
 
     // 勾选后登录
     await rememberCheckbox.check();
-    await page.getByPlaceholder('请输入用户名').fill('admin');
-    await page.getByPlaceholder('请输入密码').fill('chengxi123456');
+    await page.getByPlaceholder('请输入用户名').fill(TEST_USER);
+    await page.getByPlaceholder('请输入密码').fill(TEST_PASS);
     await page.getByRole('button', { name: '登录账号' }).click();
     await page.waitForURL('**/chat', { timeout: 10000 });
 
@@ -89,7 +92,7 @@ test.describe('登录模块', () => {
     await loginViaUI(page);
 
     // 点击右上角用户按钮
-    await page.getByRole('button', { name: 'admin' }).click();
+    await page.getByRole('button', { name: TEST_USER }).click();
     // 或导航到个人中心退出
     await page.getByRole('menuitem', { name: '个人中心' }).click();
     await page.waitForTimeout(1000);

@@ -15,14 +15,7 @@
   "bugs": {
     "url": "https://github.com/itwanger/PaiSmart/issues"
   },
-  "keywords": [
-    "ai",
-    "rag",
-    "llm",
-    "chat",
-    "itwanger",
-    "pai-smart"
-  ],
+  "keywords": ["ai", "rag", "llm", "chat", "itwanger", "pai-smart"],
   "engines": {
     "node": ">=18.20.0",
     "pnpm": ">=8.7.0"
@@ -40,13 +33,13 @@
     "prepare": "simple-git-hooks",
     "preview": "vite preview",
     "release": "sa release",
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed",
-    "test:report": "playwright show-report playwright-report",
+    "test": "pnpm --dir ../e2e-tests test",
+    "test:all": "pnpm --dir ../e2e-tests test && pnpm test:unit",
+    "test:headed": "pnpm --dir ../e2e-tests test:headed",
+    "test:report": "pnpm --dir ../e2e-tests test:report",
+    "test:ui": "pnpm --dir ../e2e-tests test:ui",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage",
-    "test:all": "playwright test && vitest run",
     "typecheck": "vue-tsc --noEmit --skipLibCheck",
     "update-pkg": "sa update-pkg"
   },
@@ -86,7 +79,6 @@
   "devDependencies": {
     "@elegant-router/vue": "0.3.8",
     "@iconify/json": "2.2.337",
-    "@playwright/test": "^1.59.1",
     "@sa/scripts": "workspace:*",
     "@sa/uno-preset": "workspace:*",
     "@soybeanjs/eslint-config": "1.6.0",
