@@ -1,9 +1,10 @@
 import { test as setup } from '@playwright/test';
-import { loginViaUI } from '../../fixtures/test-helpers';
+import { LoginPage } from '../../pages/LoginPage';
 
 const authFile = 'auth/user.json';
 
 setup('authenticate', async ({ page }) => {
-  await loginViaUI(page);
+  const loginPage = new LoginPage(page);
+  await loginPage.loginViaUI();
   await page.context().storageState({ path: authFile });
 });

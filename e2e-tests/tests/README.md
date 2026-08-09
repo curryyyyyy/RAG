@@ -20,10 +20,25 @@ PaiSmart/
     ├── playwright.config.ts                # Playwright E2E 配置
     ├── tests/
     │   ├── README.md                       # 本文件
+    │   ├── selectors/                      # 选择器集中层（DOM 结构变更只改这里）
+    │   │   ├── common.selectors.ts         # 通用选择器（loading/弹窗/表格）
+    │   │   ├── login.selectors.ts          # 登录模块选择器
+    │   │   ├── chat.selectors.ts           # 聊天助手选择器
+    │   │   ├── knowledge-base.selectors.ts # 知识库选择器
+    │   │   ├── org-tag.selectors.ts        # 组织标签选择器
+    │   │   └── user.selectors.ts           # 用户管理选择器
+    │   ├── pages/                          # POM 页面对象层
+    │   │   ├── BasePage.ts                 # 基类：公共导航/等待/弹窗操作
+    │   │   ├── LoginPage.ts
+    │   │   ├── ChatPage.ts
+    │   │   ├── KnowledgeBasePage.ts
+    │   │   ├── OrgTagPage.ts
+    │   │   └── UserManagementPage.ts
     │   ├── fixtures/
-    │   │   └── test-helpers.ts             # E2E 公共辅助函数
-    │   └── e2e/                            # E2E 测试（覆盖全部流程）
+    │   │   └── credentials.ts              # 测试凭据（TEST_USER/TEST_PASS）
+    │   └── e2e/                            # E2E 用例（只使用 Page Object）
     │       ├── auth/
+    │       │   ├── auth.setup.ts           # setup project：UI 登录一次并保存登录态
     │       │   └── login.spec.ts           # 登录模块 9 条
     │       ├── knowledge-base/
     │       │   └── knowledge-base.spec.ts  # 知识库模块 12 条
@@ -61,12 +76,29 @@ pnpm test:report
 
 采用 Playwright `setup project + storageState` 方案，登录只发生一次：
 
-- **`tests/e2e/auth/auth.setup.ts`** — `setup` 项目，运行所有用例前通过 UI 登录一次，把登录态（localStorage token）保存到 `auth/user.json`
+- **`tests/e2e/auth/auth.setup.ts`** — `setup` 项目，运行所有用例前通过 `LoginPage.loginViaUI()` 登录一次，把登录态（localStorage token）保存到 `auth/user.json`
 - **`chromium` 项目** 默认加载 `auth/user.json`，其余模块用例直接以已登录状态启动，无需再走 UI 登录
 - **`login.spec.ts`** 通过 `test.use({ storageState: { cookies: [], origins: [] } })` 覆盖为空，保证登录/重定向用例从未登录状态开始
 - `auth/` 目录由运行时生成，已在 `.gitignore` 中忽略，不提交 token 到仓库
 
-> 认证凭据（`TEST_USER`/`TEST_PASS`）从环境变量读取，默认值仅用于本地开发，CI 通过 secrets 注入。
+> 认证凭据（`TEST_USER`/`TEST_PASS`）定义在 `tests/fixtures/credentials.ts`，从环境变量读取，默认值仅用于本地开发，CI 通过 secrets 注入。
+
+## 分层设计（POM + 选择器集中）
+
+为控制可维护性，用例按三层组织，职责严格分离：
+
+| 层 | 位置 | 职责 |
+|----|------|------|
+| **选择器层** | `tests/selectors/` | 只存放 DOM 文本/placeholder/role/URL。**前端 DOM 变化时只改这里** |
+| **页面对象层** | `tests/pages/` | 封装各模块的 locator 与行为（打开弹窗、登录、导航等）。不写断言 |
+| **用例层** | `tests/e2e/` | 只组合 Page Object + 断言，不再出现裸选择器字符串 |
+
+约定：
+
+- **选择器必须入库**：任何新用例里出现的定位文本/正则，先加到对应 `selectors/*.ts`
+- **断言留在 spec**：Page Object 只暴露 locator 与动作，`expect` 断言写在 spec 中
+- **公共操作进基类**：`goto` / `waitForStable` / `navigateTo` / `closeDialog` / `button` / `menuItem` 在 `BasePage`，子类继承
+- **凭据不硬编码**：测试用户名/密码统一从 `fixtures/credentials.ts` 读取
 
 ## E2E 用例覆盖
 
@@ -147,20 +179,46 @@ pnpm test:report
 
 ## 添加新用例
 
+先在 `selectors/` 注册定位文本，再到 `pages/` 添加页面对象，最后在 `tests/e2e/` 编写用例：
+
 ```typescript
+// 1. selectors/foo.selectors.ts — 集中新增选择器
+export const fooSelectors = {
+  pageHeading: '某列表',
+  buttonNames: { add: '新增' } as const,
+} as const;
+
+// 2. pages/FooPage.ts — 封装 locator 与行为
+import { BasePage } from './BasePage';
+import { fooSelectors as s } from '../selectors/foo.selectors';
+
+export class FooPage extends BasePage {
+  readonly heading = this.page.getByRole('heading', { name: s.pageHeading });
+  async openAddDialog() {
+    await this.button(s.buttonNames.add).click();
+  }
+}
+
+// 3. e2e/foo/foo.spec.ts — 只组合 Page Object + 断言
 import { test, expect } from '@playwright/test';
-import { loginViaUI, navigateTo } from '../../fixtures/test-helpers';
+import { FooPage } from '../../pages/FooPage';
 
 test.describe('新模块', () => {
+  let fooPage: FooPage;
+
   test.beforeEach(async ({ page }) => {
-    await loginViaUI(page);
-    await navigateTo(page, '目标菜单');
+    fooPage = new FooPage(page);
+    await fooPage.goto('/');
+    await fooPage.waitForStable();
+    await fooPage.navigateTo('目标菜单');
   });
 
-  test('TC-XX-01: 简要描述', async ({ page }) => {
+  test('TC-XX-01: 简要描述', async () => {
     // arrange — 准备数据
     // act — 执行操作
+    await fooPage.openAddDialog();
     // assert — 验证结果
+    await expect(fooPage.heading).toBeVisible();
   });
 });
 ```
