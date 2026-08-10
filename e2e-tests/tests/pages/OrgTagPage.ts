@@ -15,4 +15,10 @@ export class OrgTagPage extends BasePage {
   tagCell(tagName: string) {
     return this.page.getByText(tagName).first();
   }
+
+  /** 点击「刷新」并等待页面稳定。 */
+  async refresh() {
+    await this.button(s.buttonNames.refresh).click();
+    await this.waitForStable();
+  }
 }

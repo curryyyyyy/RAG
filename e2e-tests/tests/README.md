@@ -34,9 +34,15 @@ PaiSmart/
     │   │   ├── KnowledgeBasePage.ts
     │   │   ├── OrgTagPage.ts
     │   │   └── UserManagementPage.ts
+    │   ├── api/                            # API 数据种子/清理层（REST 客户端）
+    │   │   ├── ApiClient.ts                # 通用客户端：登录/请求/无感刷新/解包
+    │   │   ├── org-tags.ts                 # 组织标签 API（ADMIN）
+    │   │   ├── files.ts                    # 文件上传/删除/列表 API（USER/ADMIN）
+    │   │   └── users.ts                    # 用户 API（仅作构件，无种子用例）
     │   ├── fixtures/
-    │   │   └── credentials.ts              # 测试凭据（TEST_USER/TEST_PASS）
-    │   └── e2e/                            # E2E 用例（只使用 Page Object）
+    │   │   ├── credentials.ts              # 测试凭据（TEST_USER/TEST_PASS）
+    │   │   └── fixtures.ts                 # test.extend：页面对象 + API 客户端
+    │   └── e2e/                            # E2E 用例（只使用 Page Object + fixtures）
     │       ├── auth/
     │       │   ├── auth.setup.ts           # setup project：UI 登录一次并保存登录态
     │       │   └── login.spec.ts           # 登录模块 9 条
@@ -47,7 +53,7 @@ PaiSmart/
     │       ├── user/
     │       │   └── user-management.spec.ts # 用户管理 9 条
     │       └── org-tag/
-    │           └── org-tag.spec.ts         # 组织标签 9 条
+    │           └── org-tag.spec.ts         # 组织标签 10 条
     ├── playwright-report/                  # E2E HTML 报告（生成）
     └── test-results/                       # E2E 测试产物（生成）
 ```
@@ -99,6 +105,67 @@ pnpm test:report
 - **断言留在 spec**：Page Object 只暴露 locator 与动作，`expect` 断言写在 spec 中
 - **公共操作进基类**：`goto` / `waitForStable` / `navigateTo` / `closeDialog` / `button` / `menuItem` 在 `BasePage`，子类继承
 - **凭据不硬编码**：测试用户名/密码统一从 `fixtures/credentials.ts` 读取
+
+## API 数据种子/清理层 + 自定义 fixtures
+
+为消除对预置数据库数据的依赖（数据漂移、并发下超时等 flaky 根因），新增两层构件：
+
+### API 层 (`tests/api/`)
+
+基于 Node 原生 `fetch`/`FormData`/`Blob`（Node v22+，零额外依赖）对接后端 REST API：
+
+- **`ApiClient.ts`** — 通用客户端
+  - `login(username, password)`：`POST /users/login`，成功后缓存 `data.token`
+  - `request<T>(method, path, { body?, params?, formData?, skipAuth? })`：自动带 `Authorization: Bearer <token>`；响应头 `New-Token` 出现时无感刷新 token；解包 `{code, message, data}`，`code !== 200`（数字/字符串）抛带 message 的错误
+  - 便捷方法 `get/post/put/delete<T>()`
+- **`org-tags.ts`**（`OrgTagApi`，需 ADMIN）— `create` / `delete` / `list`
+- **`files.ts`**（`FileApi`，需 USER/ADMIN）— `upload(fileName, buffer, {orgTag, isPublic})`（`node:crypto` 算 32 位 MD5 → 单分片 chunk → merge）、`delete(fileMd5)`、`uploads()`
+- **`users.ts`**（`UserApi`）— 仅作构件（`login`/`me`/`list`/`assignOrgTags`），**不用于用户种子**（见「已知限制」）
+
+> 基路径默认 `http://localhost:8081/api/v1`，可用环境变量 `API_BASE_URL` 覆盖。
+
+### 自定义 fixtures (`tests/fixtures/fixtures.ts`)
+
+`test.extend` 统一注入，spec 不再手动 `new XPage(page)`：
+
+- **页面对象（test-scoped）**：`loginPage` / `chatPage` / `kbPage` / `orgTagPage` / `userPage` → `use(new XPage(page))`
+- **API（worker-scoped，每 worker 用管理员凭证登录一次）**：`adminApi` / `orgTagApi` / `fileApi` / `userApi`（共享同一 token，含无感刷新）
+- spec 侧只需 `import { test, expect } from '../../fixtures/fixtures'`，在 `beforeEach`/用例签名中声明所需 fixture
+
+### 数据隔离模式（create → verify → delete）
+
+需要业务数据的用例通过 API 在运行期自建数据、用完即删，互不干扰：
+
+```typescript
+// 例：TC-ORG-10（创建/删除闭环，唯一 tagId/name）
+await orgTagApi.create({ tagId, name });
+await orgTagPage.refresh();
+await expect(orgTagPage.tagCell(name)).toBeVisible();
+
+await orgTagApi.delete(tagId);
+await orgTagPage.refresh();
+await expect(orgTagPage.tagCell(name)).toHaveCount(0);
+```
+
+```typescript
+// 例：知识库种子文件 fixture（test-scoped，teardown 清理）
+const test = base.extend<{ seededFile: { fileName: string; fileMd5: string } }>({
+  seededFile: async ({ fileApi }, use) => {
+    const fileName = `e2e-seed-${Date.now()}.txt`;
+    const { fileMd5 } = await fileApi.upload(fileName, Buffer.from('内容'));
+    await use({ fileName, fileMd5 });
+    await fileApi.delete(fileMd5).catch(() => {}); // 清理失败不阻塞测试
+  },
+});
+```
+
+## 已知限制
+
+- **无删除用户端点**、注册默认 `INVITE_ONLY`（需邀请码）→ 不新增用户种子用例，`UserApi` 仅作构件
+- **组织标签删除约束**：非 `DEFAULT`、无子标签、未被用户分配才可删 → 种子标签须用唯一 `tagId`/`name`，且不挂子标签
+- **TC-KB-06**（ES 检索）依赖既有索引数据，需预置含「RAG」关键词的已解析文档
+- **TC-KB-09/10**（PDF 预览）依赖预置 `paismart.pdf` 作预览对象
+- API 相关用例要求后端 + Redis 等依赖服务在运行，且管理员凭据（`TEST_USER`/`TEST_PASS`）有效
 
 ## E2E 用例覆盖
 
@@ -174,8 +241,9 @@ pnpm test:report
 | TC-ORG-07 | 刷新按钮功能 | Feature |
 | TC-ORG-08 | 列设置按钮存在 | Render |
 | TC-ORG-09 | 分页控件存在 | Render |
+| TC-ORG-10 | 创建标签 → UI 可见 → 删除 → 不可见 | Data Isolation |
 
-**合计 48 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network、Dialog 等维度。
+**合计 50 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network、Dialog、Data Isolation 等维度。
 
 ## 添加新用例
 
@@ -199,22 +267,18 @@ export class FooPage extends BasePage {
   }
 }
 
-// 3. e2e/foo/foo.spec.ts — 只组合 Page Object + 断言
-import { test, expect } from '@playwright/test';
-import { FooPage } from '../../pages/FooPage';
+// 3. e2e/foo/foo.spec.ts — 只组合 Page Object + fixtures + 断言
+import { test, expect } from '../../fixtures/fixtures';
 
 test.describe('新模块', () => {
-  let fooPage: FooPage;
-
-  test.beforeEach(async ({ page }) => {
-    fooPage = new FooPage(page);
+  test.beforeEach(async ({ fooPage }) => {
     await fooPage.goto('/');
     await fooPage.waitForStable();
     await fooPage.navigateTo('目标菜单');
   });
 
-  test('TC-XX-01: 简要描述', async () => {
-    // arrange — 准备数据
+  test('TC-XX-01: 简要描述', async ({ fooPage }) => {
+    // arrange — 准备数据（需要业务数据时用对应 API fixture 创建）
     // act — 执行操作
     await fooPage.openAddDialog();
     // assert — 验证结果
@@ -222,6 +286,8 @@ test.describe('新模块', () => {
   });
 });
 ```
+
+页面对象与页面级别的 fixture（`fooPage`）在 `tests/fixtures/fixtures.ts` 中注册；若新模块需要种子数据，在 spec 内用 `test.extend` 定义测试级 fixture（见「数据隔离模式」）。
 
 ## Playwright 配置说明
 

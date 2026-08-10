@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
+import { test, expect } from '../../fixtures/fixtures';
 import { loginSelectors as s } from '../../selectors/login.selectors';
 import { TEST_USER, TEST_PASS } from '../../fixtures/credentials';
 
@@ -7,18 +6,15 @@ import { TEST_USER, TEST_PASS } from '../../fixtures/credentials';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('登录模块', () => {
-  let loginPage: LoginPage;
-
-  test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
+  test.beforeEach(async ({ loginPage }) => {
     await loginPage.gotoLogin();
   });
 
-  test('TC-LOGIN-01: 正常登录 — 成功跳转到聊天页面', async () => {
+  test('TC-LOGIN-01: 正常登录 — 成功跳转到聊天页面', async ({ loginPage }) => {
     await loginPage.loginExpectSuccess(TEST_USER, TEST_PASS);
   });
 
-  test('TC-LOGIN-02: 密码错误 — 拒绝登录', async ({ page }) => {
+  test('TC-LOGIN-02: 密码错误 — 拒绝登录', async ({ page, loginPage }) => {
     // 拦截登录 API 响应
     const responsePromise = page.waitForResponse(
       resp => resp.url().includes(s.loginApiPath) && resp.status() !== 200,
@@ -34,7 +30,7 @@ test.describe('登录模块', () => {
     await expect(page).toHaveURL(s.urlLoginRegex);
   });
 
-  test('TC-LOGIN-03: 空用户名 — 前端校验', async ({ page }) => {
+  test('TC-LOGIN-03: 空用户名 — 前端校验', async ({ page, loginPage }) => {
     await loginPage.passwordInput.fill(TEST_PASS);
     await loginPage.loginButton.click();
 
@@ -44,7 +40,7 @@ test.describe('登录模块', () => {
     await expect(page).not.toHaveURL(/\/chat/);
   });
 
-  test('TC-LOGIN-04: 空密码 — 前端校验', async ({ page }) => {
+  test('TC-LOGIN-04: 空密码 — 前端校验', async ({ page, loginPage }) => {
     await loginPage.usernameInput.fill(TEST_USER);
     await loginPage.loginButton.click();
 
@@ -52,12 +48,12 @@ test.describe('登录模块', () => {
     await expect(loginPage.passwordInput).toBeVisible();
   });
 
-  test('TC-LOGIN-05: 都不填写直接提交', async ({ page }) => {
+  test('TC-LOGIN-05: 都不填写直接提交', async ({ page, loginPage }) => {
     await loginPage.loginButton.click();
     await expect(page).not.toHaveURL(/\/chat/);
   });
 
-  test('TC-LOGIN-06: 记住用户名密码 — 复选框存在且可点击', async ({ page }) => {
+  test('TC-LOGIN-06: 记住用户名密码 — 复选框存在且可点击', async ({ page, loginPage }) => {
     await expect(loginPage.rememberCheckbox).toBeVisible();
 
     // 勾选后登录
@@ -71,14 +67,14 @@ test.describe('登录模块', () => {
     await expect(page).toHaveURL(/\/chat/);
   });
 
-  test('TC-LOGIN-07: Token 持久化 — localStorage 写入', async ({ page }) => {
+  test('TC-LOGIN-07: Token 持久化 — localStorage 写入', async ({ page, loginPage }) => {
     await loginPage.loginViaUI();
 
     const hasToken = await page.evaluate((key) => !!localStorage.getItem(key), s.tokenStorageKey);
     expect(hasToken).toBe(true);
   });
 
-  test('TC-LOGIN-08: 退出登录 — 清除状态并跳回登录页', async ({ page }) => {
+  test('TC-LOGIN-08: 退出登录 — 清除状态并跳回登录页', async ({ page, loginPage }) => {
     await loginPage.loginViaUI();
 
     // 点击右上角用户按钮，再导航到个人中心退出

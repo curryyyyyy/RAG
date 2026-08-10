@@ -6,7 +6,6 @@ export const knowledgeBaseSelectors = {
   pageHeading: '文件列表',
   tableHeaders: ['文件名', 'MD5', '文件大小', '上传状态', '组织标签', '上传时间'],
   knownFile: 'paismart.pdf',
-  md5Prefix: '3b97a00d',
   // 检索弹窗
   searchDialogTitle: '知识库检索',
   keywordPlaceholder: '请输入关键字',
