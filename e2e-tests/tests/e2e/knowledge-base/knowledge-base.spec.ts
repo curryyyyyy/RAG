@@ -7,16 +7,16 @@ interface SeededFile {
 }
 
 /**
- * 测试级种子文件：用 fileApi 上传唯一 .txt → use → teardown 删除。
+ * 测试级种子文件：用 factory 上传唯一 .txt，teardown 由 factory.cleanup() 统一清理。
  * 消除对预置 paismart.pdf 的依赖（TC-KB-02 / TC-KB-12 自给自足）。
  */
 const test = base.extend<{ seededFile: SeededFile }>({
-  seededFile: async ({ fileApi }, use) => {
-    const fileName = `e2e-seed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.txt`;
+  seededFile: async ({ factory }, use) => {
+    const fileName = factory.uniqueName('e2e-seed') + '.txt';
     const buffer = Buffer.from(`PaiSmart E2E 种子内容 ${Date.now()}`, 'utf8');
-    const { fileMd5 } = await fileApi.upload(fileName, buffer);
+    const { fileMd5 } = await factory.uploadFile(fileName, buffer);
+    // 清理由 factory.cleanup() 统一完成（含用例失败时）
     await use({ fileName, fileMd5 });
-    await fileApi.delete(fileMd5).catch(() => {});
   },
 });
 

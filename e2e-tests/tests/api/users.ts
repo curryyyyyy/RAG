@@ -1,10 +1,25 @@
 import { ApiClient } from './ApiClient';
 
+/** GET /users/me 返回的当前用户信息（orgTags 为数组）。 */
 export interface UserInfo {
-  userId?: string | number;
+  id: number;
   username: string;
-  role?: string;
-  orgTags?: string[];
+  role: 'USER' | 'ADMIN';
+  orgTags: string[];
+  primaryOrg: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** GET /admin/users 返回的管理员视角用户（直接序列化 User 实体，orgTags 为逗号分隔字符串）。 */
+export interface AdminUser {
+  id: number;
+  username: string;
+  role: 'USER' | 'ADMIN';
+  orgTags: string;
+  primaryOrg: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -24,10 +39,11 @@ export class UserApi {
   }
 
   list() {
-    return this.client.get<UserInfo[]>('/admin/users');
+    return this.client.get<AdminUser[]>('/admin/users');
   }
 
-  assignOrgTags(userId: string | number, tagIds: string[]) {
-    return this.client.post<unknown>(`/admin/users/${userId}/org-tags`, { tagIds });
+  /** PUT /admin/users/{userId}/org-tags，body 为 { orgTags }。 */
+  assignOrgTags(userId: number | string, orgTags: string[]) {
+    return this.client.put<unknown>(`/admin/users/${userId}/org-tags`, { orgTags });
   }
 }

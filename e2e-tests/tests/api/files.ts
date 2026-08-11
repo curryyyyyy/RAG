@@ -6,12 +6,24 @@ export interface UploadResult {
   fileName: string;
 }
 
+/** GET /documents/accessible 返回的文件对象（后端 convertFilesToResponse）。 */
 export interface UploadedDoc {
   fileMd5: string;
-  fileName?: string;
-  fileSize?: number;
-  isPublic?: boolean;
-  orgTag?: string;
+  fileName: string;
+  totalSize: number;
+  status: string;
+  userId: string;
+  orgTag: string;
+  /** 后端同时输出 public 与 isPublic 两个字段，均为同一布尔值。 */
+  public: boolean;
+  isPublic: boolean;
+  createdAt?: string;
+  mergedAt?: string;
+  estimatedEmbeddingTokens?: number;
+  estimatedChunkCount?: number;
+  actualEmbeddingTokens?: number;
+  actualChunkCount?: number;
+  orgTagName?: string;
 }
 
 export interface UploadFileParams {

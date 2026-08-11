@@ -23,7 +23,7 @@ export class ApiClient {
 
   /** POST /users/login，登录成功自动缓存 token。 */
   async login(username: string, password: string) {
-    const data = await this.post<{ token: string }>('/users/login', { username, password }, { skipAuth: true });
+    const data = await this.post<{ token: string; refreshToken: string }>('/users/login', { username, password }, { skipAuth: true });
     this.token = data.token;
     return data;
   }

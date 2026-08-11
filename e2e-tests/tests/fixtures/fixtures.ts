@@ -8,6 +8,7 @@ import { ApiClient } from '../api/ApiClient';
 import { OrgTagApi } from '../api/org-tags';
 import { FileApi } from '../api/files';
 import { UserApi } from '../api/users';
+import { DataFactory } from '../factories/DataFactory';
 import { TEST_USER, TEST_PASS } from './credentials';
 
 type Fixtures = {
@@ -22,6 +23,8 @@ type Fixtures = {
   orgTagApi: OrgTagApi;
   fileApi: FileApi;
   userApi: UserApi;
+  // 数据工厂（test-scoped，每用例独立清理清单，teardown 自动清理）
+  factory: DataFactory;
 };
 
 export const test = base.extend<Fixtures>({
@@ -55,6 +58,12 @@ export const test = base.extend<Fixtures>({
   },
   userApi: async ({ adminApi }, use) => {
     await use(new UserApi(adminApi));
+  },
+  // test-scoped：每个用例独立的数据工厂，teardown 时自动清理登记的资源（用例失败也会执行）
+  factory: async ({ adminApi }, use) => {
+    const factory = new DataFactory(adminApi);
+    await use(factory);
+    await factory.cleanup();
   },
 });
 

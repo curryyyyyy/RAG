@@ -75,18 +75,18 @@ test.describe('组织标签模块', () => {
     if (count > 0) await expect(orgTagPage.pagination.first()).toBeAttached();
   });
 
-  test('TC-ORG-10: 创建标签 → UI 可见 → 删除 → 不可见', async ({ orgTagPage, orgTagApi }) => {
-    const suffix = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+  test('TC-ORG-10: 创建标签 → UI 可见 → 删除 → 不可见', async ({ orgTagPage, factory }) => {
+    const suffix = factory.suffix();
     const tagId = `e2e-tag-${suffix}`;
     const name = `E2E标签-${suffix}`;
 
-    // 创建（唯一 tagId/name）→ 刷新 → 列表可见
-    await orgTagApi.create({ tagId, name });
+    // 创建（唯一 tagId/name，已登记自动清理）→ 刷新 → 列表可见
+    await factory.createTag({ tagId, name });
     await orgTagPage.refresh();
     await expect(orgTagPage.tagCell(name)).toBeVisible({ timeout: 5000 });
 
     // 删除 → 刷新 → 列表不可见
-    await orgTagApi.delete(tagId);
+    await factory.orgTags.delete(tagId);
     await orgTagPage.refresh();
     await expect(orgTagPage.tagCell(name)).toHaveCount(0);
   });

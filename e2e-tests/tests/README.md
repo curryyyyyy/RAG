@@ -39,9 +39,11 @@ PaiSmart/
     │   │   ├── org-tags.ts                 # 组织标签 API（ADMIN）
     │   │   ├── files.ts                    # 文件上传/删除/列表 API（USER/ADMIN）
     │   │   └── users.ts                    # 用户 API（仅作构件，无种子用例）
+    │   ├── factories/
+    │   │   └── DataFactory.ts              # 数据工厂：唯一命名 + 自动登记清理
     │   ├── fixtures/
     │   │   ├── credentials.ts              # 测试凭据（TEST_USER/TEST_PASS）
-    │   │   └── fixtures.ts                 # test.extend：页面对象 + API 客户端
+    │   │   └── fixtures.ts                 # test.extend：页面对象 + API 客户端 + 数据工厂
     │   └── e2e/                            # E2E 用例（只使用 Page Object + fixtures）
     │       ├── auth/
     │       │   ├── auth.setup.ts           # setup project：UI 登录一次并保存登录态
@@ -130,6 +132,7 @@ pnpm test:report
 
 - **页面对象（test-scoped）**：`loginPage` / `chatPage` / `kbPage` / `orgTagPage` / `userPage` → `use(new XPage(page))`
 - **API（worker-scoped，每 worker 用管理员凭证登录一次）**：`adminApi` / `orgTagApi` / `fileApi` / `userApi`（共享同一 token，含无感刷新）
+- **数据工厂（test-scoped）**：`factory` → 唯一命名 + 自动登记清理，用例结束（含失败）统一删除，见「数据隔离模式」
 - spec 侧只需 `import { test, expect } from '../../fixtures/fixtures'`，在 `beforeEach`/用例签名中声明所需 fixture
 
 ### 数据隔离模式（create → verify → delete）
@@ -137,24 +140,28 @@ pnpm test:report
 需要业务数据的用例通过 API 在运行期自建数据、用完即删，互不干扰：
 
 ```typescript
-// 例：TC-ORG-10（创建/删除闭环，唯一 tagId/name）
-await orgTagApi.create({ tagId, name });
+// 例：TC-ORG-10（创建/删除闭环，唯一 tagId/name；factory 已自动登记清理作兜底）
+const suffix = factory.suffix();
+const tagId = `e2e-tag-${suffix}`;
+const name = `E2E标签-${suffix}`;
+
+await factory.createTag({ tagId, name });
 await orgTagPage.refresh();
 await expect(orgTagPage.tagCell(name)).toBeVisible();
 
-await orgTagApi.delete(tagId);
+await factory.orgTags.delete(tagId);
 await orgTagPage.refresh();
 await expect(orgTagPage.tagCell(name)).toHaveCount(0);
+// factory.cleanup() 在 fixture teardown 自动执行：即使中途断言失败，已登记的资源也会被删除
 ```
 
 ```typescript
-// 例：知识库种子文件 fixture（test-scoped，teardown 清理）
+// 例：知识库种子文件 fixture（test-scoped；清理由 factory 兜底，无需手写 delete）
 const test = base.extend<{ seededFile: { fileName: string; fileMd5: string } }>({
-  seededFile: async ({ fileApi }, use) => {
-    const fileName = `e2e-seed-${Date.now()}.txt`;
-    const { fileMd5 } = await fileApi.upload(fileName, Buffer.from('内容'));
+  seededFile: async ({ factory }, use) => {
+    const fileName = factory.uniqueName('e2e-seed') + '.txt';
+    const { fileMd5 } = await factory.uploadFile(fileName, Buffer.from('内容'));
     await use({ fileName, fileMd5 });
-    await fileApi.delete(fileMd5).catch(() => {}); // 清理失败不阻塞测试
   },
 });
 ```
@@ -287,7 +294,7 @@ test.describe('新模块', () => {
 });
 ```
 
-页面对象与页面级别的 fixture（`fooPage`）在 `tests/fixtures/fixtures.ts` 中注册；若新模块需要种子数据，在 spec 内用 `test.extend` 定义测试级 fixture（见「数据隔离模式」）。
+页面对象与页面级别的 fixture（`fooPage`）在 `tests/fixtures/fixtures.ts` 中注册；若新模块需要种子数据，优先用 `factory`（数据工厂）创建并自动清理；复杂组合可在 spec 内用 `test.extend` 定义测试级 fixture（见「数据隔离模式」）。
 
 ## Playwright 配置说明
 
