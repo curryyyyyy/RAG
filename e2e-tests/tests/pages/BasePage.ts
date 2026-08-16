@@ -21,9 +21,9 @@ export class BasePage {
     await this.page.goto(path);
   }
 
-  /** 等待页面稳定：网络空闲且 loading 隐藏。 */
+  /** 等待页面稳定：DOM 就绪 + loading 隐藏。不用 networkidle，避免 WebSocket（聊天页）挂起。 */
   async waitForStable() {
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
     const spinner = this.page.locator(commonSelectors.spinner);
     if (await spinner.isVisible().catch(() => false)) {
       await spinner.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});

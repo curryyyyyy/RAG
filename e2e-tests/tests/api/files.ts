@@ -11,7 +11,8 @@ export interface UploadedDoc {
   fileMd5: string;
   fileName: string;
   totalSize: number;
-  status: string;
+  /** 后端序列化 file.getStatus()（int）：0=上传中 1=已完成 2=合并中。 */
+  status: number;
   userId: string;
   orgTag: string;
   /** 后端同时输出 public 与 isPublic 两个字段，均为同一布尔值。 */

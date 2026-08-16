@@ -70,7 +70,7 @@ export class LoginPage extends BasePage {
     try {
       await this.page.waitForURL(s.urlChat, { timeout: 20000 });
     } catch {
-      await this.page.waitForLoadState('networkidle');
+      await this.page.waitForLoadState('domcontentloaded');
     }
   }
 

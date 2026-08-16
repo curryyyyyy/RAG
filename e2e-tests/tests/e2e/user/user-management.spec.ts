@@ -61,7 +61,7 @@ test.describe('用户管理模块', () => {
     const refreshBtn = userPage.button(s.buttonNames.refresh);
     await expect(refreshBtn).toBeVisible();
     await refreshBtn.click();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await expect(userPage.heading).toBeVisible();
   });
 

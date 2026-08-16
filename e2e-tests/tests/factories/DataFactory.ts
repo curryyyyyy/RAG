@@ -53,6 +53,20 @@ export class DataFactory {
     return { fileName: name, fileMd5 };
   }
 
+  /**
+   * 轮询 /documents/accessible，直到文档完成异步向量化 + ES 索引（actualChunkCount > 0）。
+   * 用于「上传后需可搜索」的用例（如知识库关键字检索）。
+   */
+  async waitForDocIndexed(fileMd5: string, timeoutMs = 30_000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const doc = (await this.files.uploads()).find((d) => d.fileMd5 === fileMd5);
+      if (doc && doc.actualChunkCount != null && doc.actualChunkCount > 0) return;
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    throw new Error(`等待文档向量化/索引超时: ${fileMd5}`);
+  }
+
   /** 逆序执行全部清理（后创建的先删，避免级联约束），并清空清单。 */
   async cleanup() {
     for (const fn of this.cleanups.splice(0).reverse()) {

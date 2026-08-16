@@ -20,6 +20,7 @@ PaiSmart/
     ├── playwright.config.ts                # Playwright E2E 配置
     ├── tests/
     │   ├── README.md                       # 本文件
+    │   ├── global-setup.ts                 # 启动即清扫残留 e2e-* 数据（best-effort）
     │   ├── selectors/                      # 选择器集中层（DOM 结构变更只改这里）
     │   │   ├── common.selectors.ts         # 通用选择器（loading/弹窗/表格）
     │   │   ├── login.selectors.ts          # 登录模块选择器
@@ -43,7 +44,8 @@ PaiSmart/
     │   │   └── DataFactory.ts              # 数据工厂：唯一命名 + 自动登记清理
     │   ├── fixtures/
     │   │   ├── credentials.ts              # 测试凭据（TEST_USER/TEST_PASS）
-    │   │   └── fixtures.ts                 # test.extend：页面对象 + API 客户端 + 数据工厂
+    │   │   ├── fixtures.ts                 # test.extend：页面对象 + API 客户端 + 数据工厂
+    │   │   └── sample.pdf                  # 最小合法 1 页 PDF（TC-KB-09/10 预览种子）
     │   └── e2e/                            # E2E 用例（只使用 Page Object + fixtures）
     │       ├── auth/
     │       │   ├── auth.setup.ts           # setup project：UI 登录一次并保存登录态
@@ -157,21 +159,38 @@ await expect(orgTagPage.tagCell(name)).toHaveCount(0);
 
 ```typescript
 // 例：知识库种子文件 fixture（test-scoped；清理由 factory 兜底，无需手写 delete）
+// 注意：Playwright 惰性初始化 fixture，测试体里的 seeded* 在上传时 beforeEach 已完成导航、
+// 页面挂载时已抓取过一次列表，故种子上传后必须调页面 refresh() 重新拉取，否则表格是 stale 的。
 const test = base.extend<{ seededFile: { fileName: string; fileMd5: string } }>({
-  seededFile: async ({ factory }, use) => {
+  seededFile: async ({ factory, kbPage }, use) => {
     const fileName = factory.uniqueName('e2e-seed') + '.txt';
     const { fileMd5 } = await factory.uploadFile(fileName, Buffer.from('内容'));
+    await kbPage.refresh();
     await use({ fileName, fileMd5 });
   },
 });
 ```
 
+> 若种子文件内容固定（如 PDF），后端按 `fileMd5` 去重，并行上传同内容会报「已完成合并」。需在内容末尾追加唯一字节（如 PDF 的 `%%EOF` 后加唯一注释）使 `fileMd5` 每次不同。
+
+### 启动即清扫（globalSetup）
+
+`tests/global-setup.ts`（在 `playwright.config.ts` 注册 `globalSetup`）在**全部用例运行前执行一次**，用于清理由上次被强杀/中断而残留的 `e2e-*` 数据，保证测试可反复重跑不污染全局列表断言：
+
+1. 用独立 `ApiClient` 以 `TEST_USER`/`TEST_PASS` 登录后端（`API_BASE_URL`，默认 `http://localhost:8081/api/v1`）
+2. 删除 `tagId` 以 `e2e-tag-` 开头的组织标签
+3. 删除 `fileName` 以 `e2e-seed-` / `e2e-pdf-` 开头的文件
+
+全部 **best-effort**：登录/清理任一环节失败只 `console.warn` 并跳过，绝不抛错阻塞运行。**只清理 `e2e-` 前缀，绝不触碰真实数据**。
+
+> 已知罕见边界：同时运行两个测试进程时，后启动进程的 globalSetup 会清理先启动进程正在使用的 live 数据。正常单进程运行不受影响。
+
 ## 已知限制
 
 - **无删除用户端点**、注册默认 `INVITE_ONLY`（需邀请码）→ 不新增用户种子用例，`UserApi` 仅作构件
 - **组织标签删除约束**：非 `DEFAULT`、无子标签、未被用户分配才可删 → 种子标签须用唯一 `tagId`/`name`，且不挂子标签
-- **TC-KB-06**（ES 检索）依赖既有索引数据，需预置含「RAG」关键词的已解析文档
-- **TC-KB-09/10**（PDF 预览）依赖预置 `paismart.pdf` 作预览对象
+- **TC-KB-06**（ES 检索）通过 `seededSearchable` fixture 自建含「RAG」的文档并等待向量化完成（约数秒），不再依赖预置数据
+- **TC-KB-09/10**（PDF 预览）通过 `seededPdf` fixture 上传 `tests/fixtures/sample.pdf`（最小合法 1 页 PDF），合并即完成即可预览
 - API 相关用例要求后端 + Redis 等依赖服务在运行，且管理员凭据（`TEST_USER`/`TEST_PASS`）有效
 
 ## E2E 用例覆盖
