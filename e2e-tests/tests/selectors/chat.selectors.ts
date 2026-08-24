@@ -9,6 +9,7 @@ export const chatSelectors = {
   messageInputPlaceholderRegex: /发送消息|给.*发送消息/i,
   historySenderRegex: /admin|派聪明/,
   dateFilterClassRegex: '[class*="date"]',
+  sendButtonSelector: '.n-button--primary-type',
   // 侧边栏菜单
   menus: [
     '用户管理', '聊天助手', '聊天记录', '知识库',

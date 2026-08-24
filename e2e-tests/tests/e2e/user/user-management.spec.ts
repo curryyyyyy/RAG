@@ -22,6 +22,8 @@ test.describe('用户管理模块', () => {
     for (const header of s.exactTableHeaders) {
       await expect(table.getByText(header, { exact: true })).toBeVisible();
     }
+    // 表头之外，还应至少有一行数据（空表不能算"正确加载"）
+    await expect(userPage.rows).not.toHaveCount(0);
   });
 
   test('TC-USER-02: 用户列表包含数据行', async ({ userPage }) => {

@@ -95,8 +95,8 @@ test.describe('知识库模块', () => {
     await kbPage.keywordInput.fill('RAG');
     await kbPage.button(s.buttonNames.search).click();
 
-    // 应显示 Score 评分
-    await expect(page.getByText(s.scoreRegex).first()).toBeVisible({ timeout: 8000 });
+    // 应显示 Score 评分（确认含数字非空，排除 "Score: -" 等占位）
+    await expect(page.getByText(s.scoreNumericRegex).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('TC-KB-07: 检索知识库 — 重置搜索表单', async ({ kbPage }) => {
@@ -116,12 +116,11 @@ test.describe('知识库模块', () => {
   });
 
   test('TC-KB-09: 文件预览 — 打开预览面板', async ({ page, kbPage, seededPdf }) => {
-    // 预览需 PDF（“第 N 页”指示器），用工厂种子 PDF 自给自足
+    // 用工厂种子 PDF 自给自足
     await kbPage.filePreviewButton(seededPdf.fileName).click();
 
-    // 应出现 PDF 预览区域
-    const previewPanel = page.locator(`text=${s.previewPageText}`).first();
-    await expect(previewPanel).toBeVisible({ timeout: 8000 });
+    // 预览面板标题应展示种子文件名（h2.preview-title），而非仅依赖单字”第”避免误命中
+    await expect(page.locator(s.previewTitleClass).filter({ hasText: seededPdf.fileName })).toBeVisible({ timeout: 8000 });
   });
 
   test('TC-KB-10: 文件预览 — 关闭预览', async ({ kbPage, seededPdf }) => {

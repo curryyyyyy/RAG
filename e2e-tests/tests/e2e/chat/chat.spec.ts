@@ -31,20 +31,14 @@ test.describe('聊天助手模块', () => {
   });
 
   test('TC-CHAT-05: 发送空消息 — 按钮 disabled', async ({ chatPage }) => {
-    // 空输入场景：检查发送按钮应当不可用（naive-ui 的 disabled 状态）
     await chatPage.messageInput.fill('');
-    // 只需确认输入存在且页面未崩溃
-    await expect(chatPage.messageInput).toBeVisible();
+    // 空输入时发送按钮应处于 disabled 状态（naive-ui 的 sendDisabled 计算属性）
+    await expect(chatPage.sendButton).toBeDisabled();
   });
 
-  test('TC-CHAT-06: 对话历史可见', async ({ chatPage }) => {
-    // 检查页面有对话消息（以用户名或AI名称为标识）
-    const msgExists = await chatPage.page.getByText(s.historySenderRegex).first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    // 如果没有历史对话，至少 chat 主区域存在
-    if (!msgExists) {
-      await expect(chatPage.mainRegion).toBeVisible();
-    }
+  test('TC-CHAT-06: 对话区域正确渲染', async ({ chatPage }) => {
+    // 对话主区域（含消息列表与输入框）应当可见
+    await expect(chatPage.mainRegion).toBeVisible();
   });
 
   test('TC-CHAT-07: 导航到聊天记录页面', async ({ page, chatPage }) => {

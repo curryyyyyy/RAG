@@ -12,6 +12,7 @@ export class ChatPage extends BasePage {
   readonly messageInput = this.page.getByPlaceholder(s.messageInputPlaceholderRegex);
   readonly mainRegion = this.page.locator(commonSelectors.mainRegion);
   readonly dateFilter = this.page.locator(s.dateFilterClassRegex).first();
+  readonly sendButton = this.mainRegion.locator(s.sendButtonSelector).first();
 
   /** 进入聊天页（默认路由 /chat）。 */
   async gotoChat() {

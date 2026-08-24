@@ -10,9 +10,10 @@ export const knowledgeBaseSelectors = {
   keywordPlaceholder: '请输入关键字',
   topKPlaceholder: '请输入topK',
   scoreRegex: /Score:/,
+  scoreNumericRegex: /Score:\s*\d/,
   // 文案反馈
   copiedRegex: /复制成功|已复制|Copied/i,
-  previewPageText: '第',
+  previewTitleClass: '.preview-title',
   // 按钮
   buttonNames: {
     add: '新增',
