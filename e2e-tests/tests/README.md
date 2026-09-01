@@ -8,6 +8,7 @@
 |------|------|------|
 | @playwright/test | ^1.59 | E2E 浏览器自动化 |
 | Chromium | - | E2E 浏览器引擎 |
+| Node.js | >=20 | API 层直接使用原生 `fetch` / `FormData` / `File`（全局 `File` 自 Node 20 起提供） |
 | pnpm | >=8.7 | 包管理 |
 
 ## 目录结构
@@ -93,22 +94,26 @@ pnpm test:report
 
 > 认证凭据（`TEST_USER`/`TEST_PASS`）定义在 `tests/fixtures/credentials.ts`，从环境变量读取，默认值仅用于本地开发，CI 通过 secrets 注入。
 
-## 分层设计（POM + 选择器集中）
+## 分层设计（选择器 / 页面对象 / API / 数据工厂 / 用例）
 
-为控制可维护性，用例按三层组织，职责严格分离：
+为控制可维护性，工程按五层组织，职责严格分离：
 
 | 层 | 位置 | 职责 |
 |----|------|------|
 | **选择器层** | `tests/selectors/` | 只存放 DOM 文本/placeholder/role/URL。**前端 DOM 变化时只改这里** |
 | **页面对象层** | `tests/pages/` | 封装各模块的 locator 与行为（打开弹窗、登录、导航等）。不写断言 |
-| **用例层** | `tests/e2e/` | 只组合 Page Object + 断言，不再出现裸选择器字符串 |
+| **API 层** | `tests/api/` | 通用 REST 客户端 + 各资源 API，负责数据种子、清理与查询 |
+| **数据工厂 + fixtures 层** | `tests/factories/`、`tests/fixtures/` | 唯一数据生成与清理登记（`DataFactory`）；`test.extend` 统一注入页面对象 / API / 工厂 |
+| **用例层** | `tests/e2e/` | 只组合 Page Object + fixtures + 断言，不再出现裸选择器字符串 |
 
 约定：
 
 - **选择器必须入库**：任何新用例里出现的定位文本/正则，先加到对应 `selectors/*.ts`
 - **断言留在 spec**：Page Object 只暴露 locator 与动作，`expect` 断言写在 spec 中
 - **公共操作进基类**：`goto` / `waitForStable` / `navigateTo` / `closeDialog` / `button` / `menuItem` 在 `BasePage`，子类继承
-- **凭据不硬编码**：测试用户名/密码统一从 `fixtures/credentials.ts` 读取
+- **凭据不硬编码**：测试用户名/密码统一从 `fixtures/credentials.ts` 读取（环境变量优先）
+- **业务数据一律自造**：需要数据时用 `factory` / API fixture 在运行期创建并登记清理，不依赖预置库数据
+- **种子资源带 `e2e-` 前缀**：保证 `globalSetup` 能兜底清扫，且绝不误删真实数据
 
 ## API 数据种子/清理层 + 自定义 fixtures
 
@@ -116,7 +121,7 @@ pnpm test:report
 
 ### API 层 (`tests/api/`)
 
-基于 Node 原生 `fetch`/`FormData`/`Blob`（Node v22+，零额外依赖）对接后端 REST API：
+基于 Node 原生 `fetch`/`FormData`/`File`（Node >=20，零额外依赖）对接后端 REST API：
 
 - **`ApiClient.ts`** — 通用客户端
   - `login(username, password)`：`POST /users/login`，成功后缓存 `data.token`
@@ -235,7 +240,7 @@ const test = base.extend<{ seededFile: { fileName: string; fileMd5: string } }>(
 | TC-CHAT-03 | WebSocket 连接状态显示 | Network |
 | TC-CHAT-04 | 消息输入框存在 | Render |
 | TC-CHAT-05 | 发送空消息 — 按钮 disabled | Validation |
-| TC-CHAT-06 | 对话历史可见 | Data |
+| TC-CHAT-06 | 对话区域正确渲染 | Render |
 | TC-CHAT-07 | 导航到聊天记录页面 | Navigation |
 | TC-CHAT-08 | 日期筛选控件存在 | Render |
 | TC-CHAT-09 | 从其他页面切换回聊天助手 | Navigation |
@@ -269,7 +274,7 @@ const test = base.extend<{ seededFile: { fileName: string; fileMd5: string } }>(
 | TC-ORG-09 | 分页控件存在 | Render |
 | TC-ORG-10 | 创建标签 → UI 可见 → 删除 → 不可见 | Data Isolation |
 
-**合计 50 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network、Dialog、Data Isolation 等维度。
+**合计 49 条 E2E 用例**，覆盖 Happy Path、Error Path、Validation、Render、Navigation、Data、State、Network、Dialog、Data Isolation 等维度。
 
 ## 添加新用例
 
@@ -319,10 +324,27 @@ test.describe('新模块', () => {
 
 `playwright.config.ts` 关键配置：
 
-- **baseURL**: `http://localhost:9527`
-- **webServer**: 自动在 `../frontend` 目录启动 `pnpm dev`，复用已运行的服务
+- **baseURL**: `http://localhost:9527`（可用 `E2E_BASE_URL` 覆盖）
+- **webServer**: 自动在 `../frontend` 目录启动 `pnpm dev`，复用已运行的服务；设置 `E2E_BASE_URL` 时不启动
 - **timeout**: 45s (单个用例)
 - **expect timeout**: 10s (单个断言)
 - **screenshot**: 失败时自动截图
 - **video**: 失败时保留视频回放
 - **trace**: 首次重试时记录
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `E2E_BASE_URL` | `http://localhost:9527` | 被测前端地址；设置后不再拉起 `webServer`，用于指向已部署环境 |
+| `API_BASE_URL` | `http://localhost:8081/api/v1` | 后端 API 基地址（数据种子/清理使用） |
+| `TEST_USER` / `TEST_PASS` | `admin` / 本地默认密码 | 管理员凭据，CI 通过 secrets 注入 |
+
+## CI 运行说明
+
+`frontend/.github/workflows/test.yml` 的 `e2e` job 会拉起前端并运行本套件，注意：
+
+- **需要完整后端栈**：MySQL / Redis / Elasticsearch / Kafka / MinIO 与 Spring Boot 服务可用，且管理员凭据有效；数据种子与登录都依赖它们
+- 公共 runner 未内置上述基础设施，环境缺失时 job 会整体失败，故设为 `continue-on-error`，结果不阻塞 PR；接入自建 runner 或服务容器后应移除该开关
+- 若前端已部署在别处，配置 `E2E_BASE_URL` 与 `API_BASE_URL`（repository variables）即可，无需在 CI 中安装并启动前端
+- 失败时上传 `playwright-report/` 与 `test-results/` 作为 artifact
